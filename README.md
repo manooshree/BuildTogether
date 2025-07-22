@@ -1,4 +1,23 @@
 ## Objective 
+Educators (and students) around the world are concerned of the effect Artificial Intelligence (AI) is having on students. Students note that they feel they are "getting dumber". This signals a needed improvement in human-machine collaboration in which the machine should meet the human where they are. I offer a solution through a novel human-machine interaction paradigm in which humans and language models effectively **build together**. 
+I develop a feature for the popular LLM use case of asking for refinements, edits, or fixes to textual user input (i.e. research paper writing, code).  
+This feature has two key components: 
+1. The LLM (Claude) makes the minimal necessary edits to the user's work. 
+2. The chat interface displays the introduced edits very clearly in comparison with the user's original work.
+
+Through this design, I aim to retain user agency and control over their work, while not actually interfering with their productivity. Additionally, the user can easily discern Claude's edits through clear highlighting and the ability to toggle between their input and Claude's edited output. This creates an easy learning opportunity as users can clearly understand the small edits that were needed to improve their input. 
+
+A video demo can be found at https://www.youtube.com/watch?v=GzyrazMdqY&ab_channel=ManooshreePatel
+
+Design mockups can be found at https://www.figma.com/design/kl4QgBAdZfGY57OtUbahT4/Anthropic-TakeHome?node-id=0-1&t=qDHOTpvI4uJHYB2e-1
+
+A detailed design document, explaining the learner-oriented motivations behind the design, is included in the repo in _BuildTogether.pdf_. 
+
+
+**Instructions to launch the application are below.**
+
+
+![EB805AA7-20A0-4D36-86C7-7526624072B0](https://github.com/user-attachments/assets/c555b57c-42a8-43ac-bf0e-744fb2c4e63c)
 
 
 ## Prerequisites

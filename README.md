@@ -9,11 +9,12 @@
 ## Setup Instructions
 
 ### 1. Clone the repository
-`git clone`
+`git clone https://github.com/manooshree/BuildTogether.git`
 #### 2. Install dependencies 
 `pnpm install`
 ### 3. Set up environment variables
-Add Anthropic API Key to a `.env.local` file
+Add Anthropic API Key to a `.env.local` file 
+
 `ANTHROPIC_API_KEY=your_anthropic_api_key_here`
 ### 4. Run the server
 `pnpm dev`

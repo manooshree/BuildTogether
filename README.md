@@ -7,7 +7,7 @@ This feature has two key components:
 
 Through this design, I aim to retain user agency and control over their work, while not actually interfering with their productivity. Additionally, the user can easily discern Claude's edits through clear highlighting and the ability to toggle between their input and Claude's edited output. This creates an easy learning opportunity as users can clearly understand the small edits that were needed to improve their input. 
 
-A video demo can be found at https://www.youtube.com/watch?v=GzyrazMdqY&ab_channel=ManooshreePatel
+A video demo can be found at [https://www.youtube.com/watch?v=GzyrazMdqY&ab_channel=ManooshreePatel](https://www.youtube.com/watch?v=GzyrazM_dqY&ab_channel=ManooshreePatel)
 
 Design mockups can be found at https://www.figma.com/design/kl4QgBAdZfGY57OtUbahT4/Anthropic-TakeHome?node-id=0-1&t=qDHOTpvI4uJHYB2e-1
 

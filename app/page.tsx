@@ -1,458 +1,424 @@
 "use client";
 
-// 1. Import necessary modules and components
-import { useChat } from "ai/react";
-import { useState, useEffect } from "react";
+
+import { useState, useEffect, useRef } from 'react';
 import {
-  Function,
-  Paperclip,
-  ArrowFatRight,
-  XCircle,
-  Circle,
-  CheckCircle,
+  ArrowUp,
   User,
 } from "@phosphor-icons/react";
 
-// 2. Define the ModelSelector component
-function ModelSelector({ onSelectModel }) {
-  // 3. Initialize state for the currentModel
-  const [currentModel, setCurrentModel] = useState({
-    model: "claude-2-100k",
-    src: "anthropic-logo.png",
-    alt: "Anthropic Logo",
-  });
-
-  // 4. Define modelSelection array
-  const modelSelection = [
-    {
-      model: "claude-2-100k",
-      src: "anthropic-logo.png",
-      alt: "Anthropic Logo",
-    },
-    {
-      model: "gpt-3.5",
-      src: "openai-logo.png",
-      alt: "OpenAI Logo",
-    },
-  ];
-
-  // 5. Define handleClick function
-  const handleClick = () => {
-    const currentIndex = modelSelection.findIndex(
-      (image) => image.src === currentModel.src
-    );
-    const nextIndex = (currentIndex + 1) % modelSelection.length;
-    setCurrentModel(modelSelection[nextIndex]);
-    onSelectModel(modelSelection[nextIndex].model);
-  };
-
-  // 6. Return JSX for ModelSelector component
-  return (
-    <div className="absolute left-0 top-0">
-      <div className="fixed z-10 left-3 top-3 right-3 grid gap-3 grid-cols-[auto_1fr_auto] font-semibold ">
-        <button
-          type="button"
-          className="bg-white rounded-full p-1.5 shadow-element transition-transform ease-in-out active:scale-90 focus:ring outline-none"
-          onClick={handleClick}
-        >
-          <div>
-            <img
-              className="max-w-[35px] max-h-[35px]"
-              src={currentModel.src}
-              alt={currentModel.alt}
-            />
+// Render edits in diff component
+interface DiffPart {
+    type: 'added' | 'removed' | 'unchanged';
+    content: string;
+    count: number;
+  }
+  
+  interface DiffResponse {
+    original: string;
+    edited: string;
+    commentary?: string; // Add commentary field
+    diff: DiffPart[];
+    hasChanges: boolean;
+    stats: {
+      additions: number;
+      deletions: number;
+      totalChanges: number;
+    };
+  }
+  
+  interface Message {
+    id: string;
+    role: 'user' | 'assistant';
+    content: string;
+    diffData?: DiffResponse; 
+  }
+  
+  
+  function DiffToggleMessage({ diffData }: { diffData: DiffResponse }) {
+    const [showEdited, setShowEdited] = useState(true);
+  
+    const copyToClipboard = async () => {
+      const textToCopy = showEdited 
+        ? diffData.diff
+            .filter(part => part.type !== 'removed')
+            .map(part => part.content)
+            .join('')
+        : diffData.original;
+      
+      try {
+        await navigator.clipboard.writeText(textToCopy);
+       
+      } catch (err) {
+        console.error('Failed to copy text: ', err);
+      }
+    };
+    
+    // original text
+    const renderDiff = () => {
+        if (!showEdited) {
+          return (
+            <div className="text-gray-800 leading-relaxed whitespace-pre-wrap font-mono text-sm">
+              {diffData.original}
+            </div>
+          );
+        }
+      
+        // edited text
+        return (
+          <div className="leading-relaxed whitespace-pre-wrap font-mono text-sm">
+            {diffData.diff.map((part, index) => {
+              switch (part.type) {
+                case 'unchanged':
+                  return (
+                    <span key={index} className="text-gray-800">
+                      {part.content}
+                    </span>
+                  );
+                case 'added':
+                  
+                  const isOnlyWhitespace = /^\s*$/.test(part.content);
+                  
+                  return (
+                    <span 
+                      key={index} 
+                      className={isOnlyWhitespace 
+                        ? "text-gray-800" 
+                        : "bg-[#d8d6ca] text-gray-800 px-0.5 rounded-sm"
+                      }
+                      title={isOnlyWhitespace ? undefined : "Added by Claude"}
+                    >
+                      {part.content}
+                    </span>
+                  );
+                case 'removed':
+                
+                  return null;
+                default:
+                  return null;
+              }
+            })}
           </div>
-        </button>
+        );
+      };
+  
+    return (
+      <div className="border rounded-lg p-4 bg-white shadow-sm">
+        {/* Header with toggle and copy button on right */}
+        <div className="flex items-center justify-end space-x-3 mb-4">
+          <button
+            onClick={() => setShowEdited(!showEdited)}
+            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+              showEdited ? 'bg-[#D9D9D9]' : 'bg-gray-300'
+            }`}
+            title={showEdited ? "Show original" : "Show Claude's edits"}
+          >
+            <span
+              className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform shadow-sm ${
+                showEdited ? 'translate-x-5' : 'translate-x-0.5'
+              }`}
+            />
+          </button>
+          
+          <button
+            onClick={copyToClipboard}
+            className="flex items-center space-x-1 text-sm text-gray-600 hover:text-gray-800 px-2 py-1 rounded hover:bg-gray-100 transition-colors"
+            title="Copy text"
+          >
+            <svg 
+              className="w-4 h-4" 
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                strokeWidth={2} 
+                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" 
+              />
+            </svg>
+            {/* <span>Copy</span> */}
+          </button>
+        </div>
+  
+        {/* Content */}
+        <div className="min-h-[60px] cursor-pointer font-mono text-sm" onClick={() => setShowEdited(!showEdited)}>
+        {renderDiff()}
+        </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
 
-// 7. Define WelcomeBack component
+
+//  WelcomeBack component
 function WelcomeBack() {
   return (
     <>
       <h1 className="text-center tracking-tighter mt-8 mb-8 sm:mb-12 text-5xl">
-        Welcome back <span className="animate-pulse">🦜</span>
+        How can I help you today? <span className="animate-pulse">🤖</span>
       </h1>
     </>
   );
 }
 
-// 8. Define VectorSelector component
-function VectorSelector({ onSelectVectorStorage }) {
-  // 9. Initialize state for currentIcon
-  const [currentIcon, setCurrentIcon] = useState({
-    vectorName: "Supabase",
-    src: "supabase-logo.png",
-    alt: "Supabase Logo",
-  });
-
-  // 10. Define iconSelection array
-  const iconSelection = [
-    {
-      vectorName: "Supabase",
-      src: "supabase-logo.png",
-      alt: "Supabase Logo",
-    },
-    {
-      vectorName: "Pinecone",
-      src: "pinecone-logo.png",
-      alt: "Pinecone Logo",
-    },
-  ];
-
-  // 11. Define handleClick function
-  const handleClick = () => {
-    const currentIndex = iconSelection.findIndex(
-      (icon) => icon.src === currentIcon.src
-    );
-    const nextIndex = (currentIndex + 1) % iconSelection.length;
-    setCurrentIcon(iconSelection[nextIndex]);
-    onSelectVectorStorage(iconSelection[nextIndex].vectorName);
-  };
-
-  // 12. Return JSX for VectorSelector component
-  return (
-    <div className="flex items-center bg-uivory-100 py-1 px-2 rounded-full cursor-pointer shadow transition-all ease-in-out active:scale-[0.98] text-ellipsis whitespace-nowrap overflow-x-hidden text-sm text-center mx-1 w-9 h-9  mt-5">
-      <button type="button" onClick={handleClick}>
-        <img src={currentIcon.src} alt={currentIcon.alt} />
-      </button>
-    </div>
-  );
-}
-
-// 13. Define main App component
+// Main App component
 export default function App() {
-  // 14. Initialize state variables
-  const [showWelcomeBack, setShowWelcomeBack] = useState(true);
-  const [isInputFocused, setInputFocused] = useState(false);
-  const [files, setFiles] = useState([]);
-  const [showSlideUp, setShowSlideUp] = useState(false);
-  const [selectedModel, setSelectedModel] = useState("gpt-3.5");
-  const [selectedVectorStorage, setSelectedVectorStorage] =
-    useState("Supabase");
-  const [functions, setFunctions] = useState([
-    { name: "wikipediaQuery", active: false, label: "Wikipedia Search" },
-    { name: "fetchCryptoPrice", active: false, label: "Crypto Price" },
-  ]);
+ 
+    const [showWelcomeBack, setShowWelcomeBack] = useState(true);
+    const [isInputFocused, setInputFocused] = useState(false);
+    const [messages, setMessages] = useState<Message[]>([]);
+    const [input, setInput] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
 
-  // 15. Define chat related hooks using useChat()
-  const { messages, input, handleInputChange, handleSubmit } = useChat();
+    // Handle input focus
+    const handleInputFocus = () => {
+        setInputFocused(true);
+    };
 
-  // 16. Handle vector storage selection
-  const handleSelectedVectorStorage = (model) => {
-    setSelectedVectorStorage(model);
-  };
+    // Handle input blur
+    const handleInputBlur = () => {
+        setInputFocused(false);
+    };
+  
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // 17. Handle model selection
-  const handleModelSelection = (model) => {
-    setSelectedModel(model);
-  };
+    // Handle input change
+    const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        setInput(e.target.value);
+        
+        // Auto-resize functionality
+        const textarea = e.target;
+        textarea.style.height = 'auto';
+        const newHeight = Math.min(textarea.scrollHeight, 200); // Max height of 200px
+        textarea.style.height = `${newHeight}px`;
+    };
+    
+      // Handle form submission
+      const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!input.trim() || isLoading) return;
+    
+        const userMessage: Message = {
+          id: Date.now().toString(),
+          role: 'user',
+          content: input.trim()
+        };
+    
+        
+        setMessages(prev => [...prev, userMessage]);
+        const currentInput = input.trim();
+        setInput("");
+        
+        if (textareaRef.current) {
+        textareaRef.current.style.height = 'auto';
+        }
+        setIsLoading(true);
+            try {
+          // Claude API Call
+          const response = await fetch('/api/chat', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              messages: [{ content: currentInput }]
+            }),
+          });
+    
+          if (!response.ok) {
+            throw new Error('Failed to get response');
+          }
+    
+          const diffData: DiffResponse = await response.json();
+    
+          // LLM message with diff 
+          const assistantMessage: Message = {
+            id: (Date.now() + 1).toString(),
+            role: 'assistant',
+            content: diffData.edited,
+            diffData: diffData
+          };
+    
+          setMessages(prev => [...prev, assistantMessage]);
+        } catch (error) {
+          console.error('Error:', error);
+          // Error message
+          const errorMessage: Message = {
+            id: (Date.now() + 1).toString(),
+            role: 'assistant',
+            content: 'Sorry, there was an error processing your request.'
+          };
+          setMessages(prev => [...prev, errorMessage]);
+        } finally {
+          setIsLoading(false);
+        }
+      };
 
-  // 18. Handle input focus
-  const handleInputFocus = () => {
-    if (!showWelcomeBack) {
-      setShowSlideUp(false);
-    }
-    setInputFocused(true);
-  };
-
-  // 19. Handle input blur
-  const handleInputBlur = () => {
-    setInputFocused(false);
-  };
-
-  // 20. Handle key down event
-  const handleKeyDown = (event) => {
+  // Keydown event
+  const handleKeyDown = (event: KeyboardEvent) => {
     if ((event.metaKey || event.ctrlKey) && event.key === "k") {
       setShowWelcomeBack((showWelcomeBack) => !showWelcomeBack);
     }
   };
 
-  // 21. Attach keydown event listener
+  // Attach keydown event listener
   useEffect(() => {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  // 22. Hide welcome back message if messages are present
+  // Hide welcome back message if messages are present
   useEffect(() => {
     if (messages.length > 0 && showWelcomeBack) {
       setShowWelcomeBack(false);
     }
   }, [messages]);
 
-  // 23. Remove a file from the files state
-  const removeFile = (index) => {
-    setFiles(files.filter((_, i) => i !== index));
-  };
 
-  // 24. Handle file change event
-  const handleFileChange = (event) => {
-    const selectedFiles = Array.from(event.target.files).slice(0, 5);
-    const filePromises = selectedFiles.map((file) => {
-      return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const base64File = e.target?.result;
-          if (base64File) {
-            resolve({
-              base64: base64File,
-              title: file.name,
-              filetype: file.type,
-              size: file.size,
-            });
-          }
-        };
-        reader.readAsDataURL(file);
-      });
-    });
-    Promise.all(filePromises).then((fileObjects) => {
-      setFiles(fileObjects);
-    });
-  };
-
-  // 25. Handle icon click
-  const handleIconClick = (index) => {
-    const newFunctions = [...functions];
-    newFunctions[index].active = !newFunctions[index].active;
-    setFunctions(newFunctions);
-    console.log(newFunctions[index]);
-  };
   return (
     <>
-      {/* 26. Include ModelSelector Component */}
-      <ModelSelector onSelectModel={handleModelSelection} />
-      {/* 27. Position input bar conditionally on whether it is the welcome screen */}
-      <div
-        className={`max-w-3xl w-full fixed overflow-y-auto ${
-          showWelcomeBack ? "top-28" : "bottom-0"
-        } mx-auto left-1/2 -translate-x-1/2`}
-      >
-        {showWelcomeBack && <WelcomeBack />}
-        {messages.length > 0 && !showWelcomeBack
-          ? messages.map((m, index) => (
-              //  28. Conditional rendering based on user or assistant
-              <div key={m.id} className="mr-3">
-                {m.role === "user" ? (
-                  <>
-                    {/* 29. User message display */}
-                    <div className="flex justify-end">
-                      <div className="flex items-end col-start-3 pb-1 mx-2 opacity-100 transform-none">
-                        <div className="rounded-xl px-3 py-2 break-words text-stone-900 transition-all bg-white place-self-end ">
-                          <div className="contents">
-                            <p className="whitespace-pre-wrap">{m.content}</p>
+      
+      {/* Main layout container */}
+      <div className="flex flex-col h-screen">
+        {/* Messages area - scrollable */}
+        <div className="flex-1 overflow-y-auto pb-32">
+          <div className="max-w-3xl mx-auto px-3">
+            {showWelcomeBack && (
+              <div className="pt-28">
+                <WelcomeBack />
+              </div>
+            )}
+            
+            {messages.length > 0 && !showWelcomeBack && (
+              <div className="pt-20">
+                {messages.map((m, index) => (
+                  // Conditional rendering based on user or assistant
+                  <div key={m.id} className="mr-3">
+                    {m.role === "user" ? (
+                      <>
+                        {/* User message display */}
+                        <div className="flex justify-end">
+                          <div className="flex items-end col-start-3 pb-1 mx-2 opacity-100 transform-none">
+                            <div className="rounded-xl px-3 py-2 break-words text-stone-900 transition-all bg-white place-self-end">
+                              <div className="contents">
+                              <p className="whitespace-pre-wrap text-sm">{m.content}</p>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-end col-start-3 pb-1 mx-2 opacity-100 transform-none">
+                            {/* User avatar */}
+                            <div className="font-lora font-bold rounded-full flex items-center justify-center h-8 w-8 text-[14px] bg-ant-primary text-white bg-[#3d3d3a]">
+                              <User size={18} />
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <div className="flex items-end col-start-3 pb-1 mx-2 opacity-100 transform-none">
-                        {/* 30. User avatar */}
-                        <div className="font-bold rounded-full flex items-center justify-center h-8 w-8 text-[14px] bg-ant-primary text-white bg-purple-800">
-                          <User size={18} />
-                        </div>
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    {/* 31. Assistant message display */}
-                    <div className="flex justify-start my-2">
-                      <div
-                        className="font-bold rounded-full flex items-center justify-center mx-2 h-8 w-8 text-[14px] bg-white text-whitemx-2 
-                    mt-0.5"
-                      >
-                        🦜
-                      </div>
-                      <div className="col-start-2 grid gap-2 opacity-100 transform-none">
-                        {/* 32. Assistant message content */}
-                        <div
-                          className={`ReactMarkdown rounded-xl px-3 py-2 break-words text-stone-900 transition-all pb-1 grid gap-3 grid-cols-1 max-w-[75ch] bg-white place-self-start`}
-                        >
-                          <div className="contents">
-                            <p className="whitespace-pre-wrap">{m.content}</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </>
-                )}
+                      </>
+                    ) : (
+                      <>
+                        {/* Assistant message display */}
+                        <div className="my-2">
+                            <div className="max-w-[75ch]">
+                                {m.diffData ? (
+                                <>
+                                    <DiffToggleMessage diffData={m.diffData} />
+                                    {/* Render commentary below the diff component */}
+                                   
+
+                                    {m.diffData.commentary && (
+                                        <div className="mt-4 text-gray-700 leading-relaxed max-w-none">
+                
+                                            <div className="whitespace-pre-wrap">
+                                            {m.diffData.commentary.split('\n').map((line, index) => {
+                                                if (line.match(/^\d+\.\s/)) {
+                                                return (
+                                                    <div key={index} className="flex mb-1">
+                                                    <span className="font-medium mr-2 text-blue-600">{line.match(/^\d+\./)[0]}</span>
+                                                    <span>{line.replace(/^\d+\.\s/, '')}</span>
+                                                    </div>
+                                                );
+                                                }
+                                                return <div key={index}>{line}</div>;
+                                            })}
+                                            </div>
+                                        </div>
+                                        )}
+                                </>
+                                ) : (
+                                <div className="rounded-xl px-3 py-2 bg-white shadow-sm">
+                                    <p className="whitespace-pre-wrap text-stone-900">{m.content}</p>
+                                </div>
+                                )}
+                            </div>
+                            </div>
+
+                      </>
+                    )}
+                  </div>
+                ))}
               </div>
-            ))
-          : null}
-        <div className="bg-white rounded-md py-2 px-2 m-3">
-          <fieldset className="sm:sticky sm:z-10 grid sm:pr-3 sm:grid-flow-col sm:grid-cols-[minmax(0,_1fr)_aufto] sm:gap-2 w-full rounded-3xl top-4 backdrop-blur-xl bg-white disabled:bg-white/50">
-            <form
-              onSubmit={(e) => {
-                handleSubmit(e, {
-                  options: {
-                    body: {
-                      selectedModel,
-                      selectedVectorStorage,
-                      files,
-                      functions,
-                    },
-                  },
-                });
-              }}
-            >
-              {showSlideUp && (
-                <div className="bg-white rounded-md py-2">
-                  {functions.map((icon, index) => (
-                    <label
-                      key={index}
-                      className="flex items-centerpy-0.5 px-0.5 rounded-full cursor-pointer transition-all ease-in-out text-sm"
-                    >
-                      {/* 33. Checkbox for functions */}
-                      <input
-                        type="checkbox"
-                        value={icon.name}
-                        checked={icon.active}
-                        onChange={() => handleIconClick(index)}
-                        className="hidden"
-                        style={{ display: "none" }}
-                      />
-                      <span
-                        className={`mr-2 pt-0.5 text-center ${
-                          icon.active ? "border-black" : "border-black"
-                        }`}
-                      >
-                        {/* 34. Check or circle icon based on function state */}
-                        {icon.active ? (
-                          <CheckCircle size={32} className="" />
-                        ) : (
-                          <Circle size={32} />
-                        )}
-                      </span>
-                      <span className="text-black my-2">{icon.label}</span>
-                    </label>
-                  ))}
-                </div>
-              )}
-              {/* 35. Textarea for user input */}
-              <textarea
-                onFocus={handleInputFocus}
-                onBlur={handleInputBlur}
-                className="p-1.5 resize-none focus:outline-none w-full h-8"
-                value={input}
-                placeholder="Message..."
-                onChange={handleInputChange}
-                name="message"
-                autoComplete="off"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault(); // Prevent new line
-                    handleSubmit(e, {
-                      options: {
-                        body: {
-                          selectedModel,
-                          selectedVectorStorage,
-                          files,
-                          functions,
-                        },
-                      },
-                    });
-                  }
-                }}
-              />
-            </form>
-            {/* 36. Function and attachment buttons */}
-            <div className="flex justify-end absolute right-0 top-0 bottom-0">
-              {selectedModel === "gpt-3.5" ? (
-                <label>
-                  <div onClick={() => setShowSlideUp(!showSlideUp)}>
-                    <button className="w-full flex items-center bg-uivory-100 py-2 px-2 rounded-full cursor-pointer shadow transition-all ease-in-out active:scale-[0.98] text-ellipsis whitespace-nowrap overflow-x-hidden text-sm">
-                      <div
-                        className={`sc-imALrc jyzrrZ grid place-items-center w-5 h-5 ${
-                          functions.some((func) => func.active)
-                            ? "text-green-500 animate-pulse"
-                            : "text-black"
-                        }`}
-                      >
-                        <Function size={18} />
-                      </div>
-                    </button>
-                  </div>
-                </label>
-              ) : null}
-              {/* 37. Attachment button */}
-              <label className="flex items-center bg-uivory-100 py-1 px-2 rounded-full cursor-pointer shadow transition-all ease-in-out active:scale-[0.98] text-ellipsis whitespace-nowrap overflow-x-hidden text-sm text-center mx-1 w-9 h-9">
-                <div>
-                  {/* 38. Input for attaching files */}
-                  <input
-                    type="file"
-                    className="opacity-0 absolute inset-0 rounded-xl -z-10 overflow-hidden"
-                    accept=".txt"
-                    onChange={handleFileChange}
-                    multiple
-                  />
-                </div>
-                <Paperclip size={18} />
-              </label>
-              {/* 39. Start new chat button */}
-              <div>
-                <button className="w-full flex items-center bg-purple-800 text-white py-2 px-2 rounded-full cursor-pointer shadow transition-all ease-in-out active:scale-[0.98] text-ellipsis whitespace-nowrap overflow-x-hidden text-sm">
-                  {showWelcomeBack ? "Start a new Chat" : ""}
-                  <div className="grid place-items-center w-5 h-5">
-                    <ArrowFatRight size={18} />
-                  </div>
-                </button>
-              </div>
-            </div>
-          </fieldset>
-          <div className="bg-white disabled:bg-white/50">
-            <div className="flex flex-wrap gap-4 ">
-              {/* 40. Display vector selector if files present */}
-              {files.length > 0 ? (
-                <VectorSelector
-                  onSelectVectorStorage={handleSelectedVectorStorage}
-                />
-              ) : (
-                ""
-              )}
-              {/* 41. Display attached files */}
-              {files.map((file, index) => (
-                <div
-                  key={index}
-                  className="mt-4 w-40 relative cursor-pointer rounded-md flex shadow text-xs bg-white shadow"
-                >
-                  <button className="absolute inset-0 cursor-pointer hover:bg-black/5 w-40"></button>
-                  {/* 42. Display file type badge */}
-                  <div className="flex-shrink-0 w-12 h-12 bg-purple-800 rounded-tl-md rounded-bl-md grid place-items-center text-white font-medium uppercase truncate">
-                    {file.title.split(".")[1].toUpperCase()}
-                  </div>
-                  <div className="py-2 px-3 min-w-0">
-                    <p className="truncate" title={file.name}>
-                      {/* 43. Display file title */}
-                      {file.title}
-                    </p>
-                    <div className="text-gray-500">
-                      {/* 44. Display file size */}
-                      {files.length > 0 &&
-                        `${(files[0]?.size / 1024)?.toFixed(2)} KB`}
-                    </div>
-                    {/* 45. Remove attached file button */}
-                    <div
-                      className="absolute top-0 right-0 bg-white shadow rounded-full cursor-pointer hover:bg-stone-100 translate-x-2 -translate-y-2 z-10"
-                      onClick={() => removeFile(index)}
-                    >
-                      <XCircle size={20} />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+            )}
           </div>
         </div>
-        <div
-          className="flex justify-end text-xs text-stone-400 delay-100 duration-500 transition-opacity mx-4"
-          style={{ visibility: isInputFocused ? "visible" : "hidden" }}
-        >
-          {/* 46. Keyboard shortcuts info */}
-          <strong>⏎</strong> to send, <strong>shift + ⏎</strong> to add a new
-          line, <strong>⌘K</strong> to create a new chat
+        
+        {/* Input area - fixed at bottom */}
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t">
+          <div className="max-w-3xl mx-auto">
+            <div className="bg-white rounded-md py-2 px-2 m-3">
+              <fieldset className="sm:sticky sm:z-10 grid sm:pr-3 sm:grid-flow-col sm:grid-cols-[minmax(0,_1fr)_auto] sm:gap-2 w-full rounded-3xl top-4 backdrop-blur-xl bg-white disabled:bg-white/50">
+                <form onSubmit={handleSubmit}>
+                  {/* Textarea for user input */}
+                  <textarea
+                    ref={textareaRef}
+                    onFocus={handleInputFocus}
+                    onBlur={handleInputBlur}
+                    className="p-1.5 resize-none focus:outline-none w-full min-h-[32px] max-h-[200px] overflow-y-auto"
+                    value={input}
+                    placeholder="Message..."
+                    onChange={handleInputChange}
+                    name="message"
+                    autoComplete="off"
+                    disabled={isLoading}
+                    rows={1}
+                    onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSubmit(e);
+                        }
+                    }}
+                    />
+                </form>
+                
+                {/* Start new chat button */}
+                <div>
+                  <button 
+                    type="submit"
+                    onClick={handleSubmit}
+                    disabled={isLoading}
+                    className="w-full flex items-center bg-[#c96442] text-white py-2 px-2 rounded-full cursor-pointer shadow transition-all ease-in-out active:scale-[0.98] text-ellipsis whitespace-nowrap overflow-x-hidden text-sm disabled:opacity-50"
+                  >
+                    
+                    <div className="grid place-items-center w-5 h-5">
+                      <ArrowUp size={18} />
+                    </div>
+                  </button>
+                </div>
+              </fieldset>
+              
+              
+            </div>
+            
+            <div
+              className="flex justify-end text-xs text-stone-400 delay-100 duration-500 transition-opacity mx-4 pb-2"
+              style={{ visibility: isInputFocused ? "visible" : "hidden" }}
+            >
+              {/*  Keyboard shortcuts info */}
+              <strong>⏎</strong> to send, <strong>shift + ⏎</strong> to add a new
+              line, <strong>⌘K</strong> to create a new chat
+            </div>
+          </div>
         </div>
       </div>
     </>
   );
-}
+ }

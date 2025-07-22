@@ -9,12 +9,14 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.57.0",
     "@nytimes/react-prosemirror": "^0.2.3",
     "@phosphor-icons/react": "^2.0.10",
     "@pinecone-database/pinecone": "^0.1.6",
     "@supabase/supabase-js": "^2.32.0",
     "ai": "2.1.32",
     "busboy": "^1.6.0",
+    "diff": "^8.0.2",
     "dotenv": "^16.3.1",
     "formidable": "^3.5.0",
     "hnswlib-node": "^1.4.2",
@@ -23,6 +25,7 @@
     "next": "13.4.4-canary.11",
     "react": "18.2.0",
     "react-dom": "^18.2.0",
+    "react-markdown": "^10.1.0",
     "stream": "^0.0.2"
   },
   "devDependencies": {

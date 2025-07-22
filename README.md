@@ -46,4 +46,5 @@ Navigate to http://localhost:3000 in your browser.
 2. View the original input and the Claude-edited input by toggling the switch in the top right coner. 
 
 
-This project builds off of the Claude-Langchain interface developed here: https://github.com/developersdigest/anthropic-claude-clone-v1
+#### Credits 
+This project builds off of the Claude-Langchain interface developed by Developer's Digest: https://github.com/developersdigest/anthropic-claude-clone-v1

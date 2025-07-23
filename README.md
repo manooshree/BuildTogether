@@ -1,11 +1,17 @@
 ## Objective 
-Educators (and students) around the world are concerned of the effect Artificial Intelligence (AI) is having on students. Students note that they feel they are "getting dumber". This signals a needed improvement in human-machine collaboration in which the machine should meet the human where they are. I offer a solution through a novel human-machine interaction paradigm in which humans and language models effectively **build together**. 
-I develop a feature for the popular LLM use case of asking for refinements, edits, or fixes to textual user input (i.e. research paper writing, code).  
-This feature has two key components: 
+
+_**How can we foster agentic users? Not just agentic AI.**_
+
+Too many articles have been published recently lamenting how "AI is making us dumb". Such an empowering technology should not disempower its users. This rhetoric should challenge for engineers and designers to design better interfaces that leave users feeling in control and agentic.
+
+I set out to reimagine a novel human-machine interaction paradigm in which users' productivity could benefit from AI tools, without compromising users' agency. I additionally wanted to create affordances for learning opportunities. I want to demonstrate how humans and language models effectively **build together**. 
+
+For this prototype, I limited my design to LLM chat interfaces and focused on the task of editing/refining/improving textual information (i.e. asking an LLM to debug your code or refine your written paragraph). 
+My feature has two key components: 
 1. The LLM (Claude) makes the minimal necessary edits to the user's work. 
 2. The chat interface displays the introduced edits very clearly in comparison with the user's original work.
 
-Through this design, I aim to retain user agency and control over their work, while not actually interfering with their productivity. Additionally, the user can easily discern Claude's edits through clear highlighting and the ability to toggle between their input and Claude's edited output. This creates an easy learning opportunity as users can clearly understand the small edits that were needed to improve their input. 
+These components make it such that the LLM is actually building on the user, creating opportunities for the user to learn how their own work could be improved. And with edits being so clearly highlighted, users easily maintain control over what to accept from the LLM. 
 
 A video demo can be found at [https://www.youtube.com/watch?v=GzyrazMdqY&ab_channel=ManooshreePatel](https://www.youtube.com/watch?v=GzyrazM_dqY&ab_channel=ManooshreePatel)
 
